@@ -11,7 +11,7 @@ public_users.post("/register", (req,res) => {
     const password = req.body.password;
   
     if (username && password) {
-        if (!doesExist(username)) {
+        if (!isValid(username)) {
             users.push({"username": username, "password": password});
             return res.status(200).json({message: "User successfully registered. Now you can login"});
         } else {
