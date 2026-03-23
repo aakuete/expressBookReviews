@@ -54,13 +54,25 @@ regd_users.post("/login", (req,res) => {
 
 });
 
+// Middleware to set req.user from session
+regd_users.use((req, res, next) => {
+    if (req.session && req.session.authorization) {
+      req.user = req.session.authorization.username;
+    }
+    next();
+  });
+
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
     
     const isbn = req.params.isbn;
     const review = req.body.review;
-    const username = req.user; 
+    const username = req.user;
   
+    if (!username) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+    
     if (!review) {
       return res.status(400).json({ message: "Review content is required" });
     }
