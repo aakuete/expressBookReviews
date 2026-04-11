@@ -30,27 +30,25 @@ const authenticatedUser = (username,password)=>{ //returns boolean
 
 //only registered users can login
 regd_users.post("/login", (req,res) => {
-    
-    const username = req.body.username;
-    const password = req.body.password;
-    // Check if username or password is missing
-    if (!username || !password) {
-        return res.status(404).json({ message: "Error logging in" });
+
+    const { username, password } = req.body;
+
+    // Check if username exists
+    if (!isValid(username)) {
+      return res.status(401).json({ message: "Invalid username" });
     }
-    // Authenticate user
-    if (authenticatedUser(username, password)) {
-        // Generate JWT access token
-        let accessToken = jwt.sign({
-            data: password
-        }, 'access', { expiresIn: 60 * 60 });
-        // Store access token and username in session
-        req.session.authorization = {
-            accessToken, username
-        }
-        return res.status(200).send("User successfully logged in");
-    } else {
-        return res.status(208).json({ message: "Invalid Login. Check username and password" });
+  
+    // Check if username and password match
+    if (!authenticatedUser(username, password)) {
+      return res.status(401).json({ message: "Invalid password" });
     }
+  
+    // If valid, create JWT token
+    const payload = { username };
+    const jwtToken = jwt.sign(payload, "access", { expiresIn: '1h' });
+  
+    // Send token in response
+    res.json({ token: jwtToken });
 
 });
 
@@ -67,7 +65,7 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     
     const isbn = req.params.isbn;
     const review = req.body.review;
-    const username = req.user;
+    const username = req.user?.username;
   
     if (!username) {
         return res.status(401).json({ message: "User not authenticated" });
@@ -84,7 +82,8 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         book.reviews = {};
       }
       book.reviews[username] = review; // add/update review by user
-  
+      console.log("Reviews:", book.reviews);
+
       return res.status(200).json({ message: "Review updated", reviews: book.reviews });
     } else {
       return res.status(404).json({ message: "Book not found" });
@@ -94,21 +93,25 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
 
 regd_users.delete("/auth/review/:isbn", (req, res) => {
 
-    const username = req.user;
+    const username = req.user?.username;
     const isbn = req.params.isbn;
-
-    // Find the book by ISBN 
-    const book = books.find(b=> b.isbn === isbn);
-
-    if (book){
-        if (book.reviews && book.reviews[username]){
-            delete book.reviews[username];
-            return res.send(`User ${username}'s review for book ${isbn} deleted.`)
-        } else {
-            return res.status(404).send("Review not found for this user.");
-        }
+  
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+  
+   
+    const book = books[isbn];
+  
+    if (book) {
+      if (book.reviews && book.reviews[username]) {
+        delete book.reviews[username];
+        return res.status(200).json({ message: `User ${username}'s review for book ${isbn} deleted.` });
+      } else {
+        return res.status(404).json({ message: "Review not found for this user." });
+      }
     } else {
-        return res.status(404).send("Book not found.");
+      return res.status(404).json({ message: "Book not found." });
     }
 
 });
