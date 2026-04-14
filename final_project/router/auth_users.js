@@ -48,7 +48,7 @@ regd_users.post("/login", (req,res) => {
     const jwtToken = jwt.sign(payload, "access", { expiresIn: '1h' });
   
     // Send token in response
-    res.json({ token: jwtToken });
+    res.json({ message: "User logged in successfully", token: jwtToken });
 
 });
 
