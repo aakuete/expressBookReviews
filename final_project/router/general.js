@@ -21,9 +21,40 @@ public_users.post("/register", (req,res) => {
     return res.status(400).json({message: "Unable to register user."});
 });
 
+
+// Function that returns a Promise to get books
+function getBooks() {
+    return new Promise((resolve, reject) => {
+      // Simulate async operation, e.g., database fetch or file read
+      setTimeout(() => {
+        if (books) {
+          resolve(books);
+        } else {
+          reject("No books available");
+        }
+      }, 1000); // 1 second delay simulating async
+    });
+  }
+  
+  // Using the Promise with .then() and .catch()
+  getBooks()
+    .then((bookList) => {
+      console.log("Available books:", bookList);
+      // You could also send this as a response in an Express route
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
-  return res.status(200).send(JSON.stringify(books,null,4));
+    getBooks()
+    .then((bookList) => {
+      res.status(200).json(bookList);
+    })
+    .catch((error) => {
+      res.status(500).json({ message: error });
+    });
 });
 
 // Get book details based on ISBN
