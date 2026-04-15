@@ -86,17 +86,34 @@ function getBookByISBN(isbn) {
       });
   });
 
+  // Function to get book details by author using a Promise
+function getBookByAuthor(author) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const booksArray = Object.values(books);
+        const filteredBooks = booksArray.filter(book => book.author.toLowerCase() === author.toLowerCase());
+        
+        if (filteredBooks.length > 0){
+            resolve(filteredBooks);
+        } else {
+          reject("No books found by this author");
+        }
+      }, 1000); // simulate async delay
+    });
+  }
+
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
     const author = req.params.author;
-    const booksArray = Object.values(books);
-    const filteredBooks = booksArray.filter(book => book.author.toLowerCase() === author.toLowerCase());
-    
-    if (filteredBooks.length > 0){
-      return res.status(200).json(filteredBooks);
-    } else {
-      return res.status(404).json({ message: "Book not found"});
-    }
+
+    getBookByAuthor(author)
+    .then((books) => {
+        res.status(200).json(books);
+    })
+    .catch((error) =>{
+        res.status(404).json({ message: error});
+    });
+
 });
 
 // Get all books based on title
